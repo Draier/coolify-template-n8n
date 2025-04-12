@@ -1,0 +1,147 @@
+templateVersion: 1.0.0
+defaultVersion: latest
+type: app
+name: N8N Queue Mode
+
+services:
+  - type: postgres
+    data:
+      projectName: N8N
+      serviceName: n8n_postgres
+      image: postgres:16
+      environment:
+        POSTGRES_PASSWORD: "4C874DCDD434121A324274B96A674"
+      volumes:
+        - "n8n_postgres_data:/var/lib/postgresql/data"
+
+  - type: redis
+    data:
+      projectName: N8N
+      serviceName: redis_n8n
+      image: redis:7
+      environment:
+        REDIS_PASSWORD: "4C874DCDD434121A324274B96A674"
+      volumes:
+        - "n8n_redis_data:/data"
+
+  - type: app
+    data:
+      projectName: N8N
+      serviceName: n8n_editor
+      source:
+        type: image
+        image: n8nio/n8n:latest
+      environment:
+        DB_POSTGRESDB_DATABASE: "N8N"
+        DB_POSTGRESDB_HOST: "n8n_postgres"
+        DB_POSTGRESDB_PASSWORD: "4C874DCDD434121A324274B96A674"
+        DB_POSTGRESDB_PORT: 5432
+        DB_POSTGRESDB_USER: postgres
+        DB_TYPE: postgresdb
+        QUEUE_BULL_REDIS_HOST: "redis_n8n"
+        QUEUE_BULL_REDIS_PASSWORD: "4C874DCDD434121A324274B96A674"
+        QUEUE_BULL_REDIS_PORT: 6379
+        EXECUTIONS_MODE: queue
+        EXECUTIONS_DATA_MAX_AGE: 336
+        EXECUTIONS_DATA_PRUNE: true
+        GENERIC_TIMEZONE: America/Sao_Paulo
+        N8N_DIAGNOSTICS_ENABLED: false
+        N8N_EDITOR_BASE_URL: "https://painelx.alphajus.app.br/"
+        N8N_ENCRYPTION_KEY: "slbHzumiMJG29VDJuPczYLX2N4J0YOPI"
+        N8N_HOST: "painelx.alphajus.app.br/"
+        N8N_PROTOCOL: https
+        NODE_ENV: production
+        NODE_FUNCTION_ALLOW_EXTERNAL: "moment,lodash,moment-with-locales"
+        N8N_LOG_LEVEL: debug
+        N8N_LOG_OUTPUT: "file,console"
+        N8N_LOG_FILE_LOCATION: "/home/node/.n8n/logs/n8n-01.log"
+        TZ: America/Sao_Paulo
+        WEBHOOK_URL: "https://n8nwook.alphajus.app.br/"
+      deploy:
+        replicas: 1
+        command: "n8n start"
+        zeroDowntime: true
+      domains:
+        - host: "painelx.alphajus.app.br"
+          https: true
+          port: 5678
+          path: "/"
+          wildcard: false
+      mounts:
+        - type: volume
+          name: data
+          mountPath: "/home/node/.n8n"
+
+  - type: app
+    data:
+      projectName: N8N
+      serviceName: n8n_webhook
+      source:
+        type: image
+        image: n8nio/n8n:latest
+      environment:
+        DB_POSTGRESDB_DATABASE: "N8N"
+        DB_POSTGRESDB_HOST: "n8n_postgres"
+        DB_POSTGRESDB_PASSWORD: "4C874DCDD434121A324274B96A674"
+        DB_POSTGRESDB_PORT: 5432
+        DB_POSTGRESDB_USER: postgres
+        DB_TYPE: postgresdb
+        QUEUE_BULL_REDIS_HOST: "redis_n8n"
+        QUEUE_BULL_REDIS_PASSWORD: "4C874DCDD434121A324274B96A674"
+        QUEUE_BULL_REDIS_PORT: 6379
+        EXECUTIONS_MODE: queue
+        EXECUTIONS_DATA_MAX_AGE: 336
+        EXECUTIONS_DATA_PRUNE: true
+        GENERIC_TIMEZONE: America/Sao_Paulo
+        N8N_DIAGNOSTICS_ENABLED: false
+        WEBHOOK_URL: "https://n8nwook.alphajus.app.br/"
+      deploy:
+        replicas: 1
+        command: "n8n webhook"
+        zeroDowntime: true
+      domains:
+        - host: "n8nwook.alphajus.app.br"
+          https: true
+          port: 5678
+          path: "/"
+          wildcard: false
+      mounts:
+        - type: volume
+          name: data
+          mountPath: "/home/node/.n8n"
+
+  - type: app
+    data:
+      projectName: N8N
+      serviceName: n8n_worker
+      source:
+        type: image
+        image: n8nio/n8n:latest
+      environment:
+        DB_POSTGRESDB_DATABASE: "N8N"
+        DB_POSTGRESDB_HOST: "n8n_postgres"
+        DB_POSTGRESDB_PASSWORD: "4C874DCDD434121A324274B96A674"
+        DB_POSTGRESDB_PORT: 5432
+        DB_POSTGRESDB_USER: postgres
+        DB_TYPE: postgresdb
+        QUEUE_BULL_REDIS_HOST: "redis_n8n"
+        QUEUE_BULL_REDIS_PASSWORD: "4C874DCDD434121A324274B96A674"
+        QUEUE_BULL_REDIS_PORT: 6379
+        EXECUTIONS_MODE: queue
+        EXECUTIONS_DATA_MAX_AGE: 336
+        EXECUTIONS_DATA_PRUNE: true
+        GENERIC_TIMEZONE: America/Sao_Paulo
+        N8N_DIAGNOSTICS_ENABLED: false
+      deploy:
+        replicas: 1
+        command: "n8n worker --concurrency=5"
+        zeroDowntime: true
+      mounts:
+        - type: volume
+          name: data
+          mountPath: "/home/node/.n8n"
+
+volumes:
+  n8n_postgres_data:
+  n8n_redis_data:
+  data:
