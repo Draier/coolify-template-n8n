@@ -1,0 +1,102 @@
+version: "3.8"
+
+services:
+  n8n_postgres:
+    image: postgres:16
+    container_name: n8n_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 4C874DCDD434121A324274B96A674
+      POSTGRES_DB: n8n
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - n8n_network
+
+  redis_n8n:
+    image: redis:7
+    container_name: redis_n8n
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: 4C874DCDD434121A324274B96A674
+    volumes:
+      - redis_data:/data
+    networks:
+      - n8n_network
+
+  n8n_editor:
+    image: n8nio/n8n:latest
+    container_name: n8n_editor
+    restart: unless-stopped
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n_postgres
+      DB_POSTGRESDB_USER: postgres
+      DB_POSTGRESDB_PASSWORD: 4C874DCDD434121A324274B96A674
+      DB_POSTGRESDB_DATABASE: n8n
+      QUEUE_BULL_REDIS_HOST: redis_n8n
+      QUEUE_BULL_REDIS_PASSWORD: 4C874DCDD434121A324274B96A674
+      QUEUE_BULL_REDIS_PORT: 6379
+      EXECUTIONS_MODE: queue
+      WEBHOOK_URL: https://n8nwook.alphajus.app.br/
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      N8N_HOST: painelx.alphajus.app.br/
+      N8N_PROTOCOL: https
+      N8N_ENCRYPTION_KEY: slbHzumiMJG29VDJuPczYLX2N4J0YOPI
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n_network
+    ports:
+      - "5678:5678"
+
+  n8n_webhook:
+    image: n8nio/n8n:latest
+    container_name: n8n_webhook
+    restart: unless-stopped
+    environment:
+      EXECUTIONS_MODE: queue
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n_postgres
+      DB_POSTGRESDB_USER: postgres
+      DB_POSTGRESDB_PASSWORD: 4C874DCDD434121A324274B96A674
+      DB_POSTGRESDB_DATABASE: n8n
+      QUEUE_BULL_REDIS_HOST: redis_n8n
+      QUEUE_BULL_REDIS_PASSWORD: 4C874DCDD434121A324274B96A674
+      QUEUE_BULL_REDIS_PORT: 6379
+      WEBHOOK_URL: https://n8nwook.alphajus.app.br/
+    command: ["n8n", "webhook"]
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n_network
+
+  n8n_worker:
+    image: n8nio/n8n:latest
+    container_name: n8n_worker
+    restart: unless-stopped
+    environment:
+      EXECUTIONS_MODE: queue
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n_postgres
+      DB_POSTGRESDB_USER: postgres
+      DB_POSTGRESDB_PASSWORD: 4C874DCDD434121A324274B96A674
+      DB_POSTGRESDB_DATABASE: n8n
+      QUEUE_BULL_REDIS_HOST: redis_n8n
+      QUEUE_BULL_REDIS_PASSWORD: 4C874DCDD434121A324274B96A674
+      QUEUE_BULL_REDIS_PORT: 6379
+    command: ["n8n", "worker", "--concurrency=5"]
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - n8n_network
+
+networks:
+  n8n_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  n8n_data:
